@@ -52,7 +52,7 @@ If `-TenantId` is omitted, the script prompts for it. Use `-Confirm:$false` to s
 | `-ExcludeTable` | none | Table names to skip. Wildcards allowed. Wins over `-IncludeTable`. |
 | `-IncludeTable` | none | Extra tables to bring into scope. Wildcards allowed. |
 | `-SkipIngestedTables` | off | Do not select tables only because they received data in the last 90 days. |
-| `-AllowDecrease` | off | Also patch tables whose current retention is higher than the target. |
+| `-AllowDecrease` | off | Also patch tables whose current retention is higher than the target. Shortening deletes data older than the new value. Without this switch such tables are skipped and a warning is shown. |
 | `-PassThru` | off | Return the per-table result objects. |
 
 ### Output
@@ -134,6 +134,7 @@ Background: the ARM Tables API (api-version 2023-09-01) rejects `plan: Auxiliary
 ## Behavior and cost notes
 
 - Shortening total retention keeps data for another 30 days before removal. The script skips such tables unless `-AllowDecrease` is set.
+- When tables are skipped for that reason, the script prints a warning (yellow) with the number of tables, the first ten names and the hint to use `-AllowDecrease`. It appears only when the requested retention is shorter than the current value of at least one in-scope table, for example when you request 90/180 on tables that are at 90/365. Run with `-WhatIf` first, because `-AllowDecrease` makes the change delete data older than the new value.
 - Longer analytics retention costs more, especially on high-volume tables. Microsoft's docs disagree on whether the free 90 days apply to all workspace data or only to Sentinel solution tables. Check your own billing.
 - Tables whose lake support is "No" in the Azure Monitor table reference (for example `Usage`, `Heartbeat`, `Operation`, `Watchlist`) can still use 90/365. "No" only means they cannot be switched to the lake-only tier. Whether the long-term part is queryable through data lake KQL for them is not documented.
 - The script sends one PATCH per table and retries throttling (429), conflicts (409), server errors (5xx) and transport errors. One failed table does not stop the run.
