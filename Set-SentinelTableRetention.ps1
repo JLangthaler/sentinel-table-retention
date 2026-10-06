@@ -532,6 +532,17 @@ foreach ($table in $tables) {
     if ($status -eq 'Pending') { $pending.Add($item) }
 }
 
+# Tell the user when tables were left alone because the request would shorten their retention
+$shortening = @($results | Where-Object { $_.Reason -like 'Would shorten*' })
+if ($shortening.Count -gt 0) {
+    $names = ($shortening | Select-Object -First 10).Table -join ', '
+    if ($shortening.Count -gt 10) { $names += ', ...' }
+    $message = '{0} in-scope table(s) were skipped because the requested retention ({1}/{2} days) is shorter than their current retention. ' -f $shortening.Count, $AnalyticsRetentionInDays, $TotalRetentionInDays
+    $message += 'Shortening deletes data that is older than the new value. To apply it anyway, run again with -AllowDecrease (use -WhatIf first). '
+    $message += "Affected tables: $names"
+    Write-Warning $message
+}
+
 # Phase 2: ask once, then patch
 if ($pending.Count -gt 0) {
     Write-Host "Planned changes in '$WorkspaceName':"
