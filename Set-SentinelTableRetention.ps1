@@ -197,7 +197,8 @@ param (
     [switch] $PassThru
 )
 
-Set-StrictMode -Version Latest
+# Pinned to 3.0, the strictest version PowerShell defines today. 'Latest' can change meaning in newer releases.
+Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 if ($TotalRetentionInDays -lt $AnalyticsRetentionInDays) {
